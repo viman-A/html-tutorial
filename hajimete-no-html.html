@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>はじめての HTML</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f6f1ea;
+        --ink: #1f2933;
+        --muted: #52606d;
+        --card: #fffdf9;
+        --accent: #c45c26;
+        --accent-soft: #f4dcc8;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+        line-height: 1.7;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, #fff 0, transparent 40%),
+          var(--bg);
+      }
+
+      main {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 48px 24px 72px;
+      }
+
+      header {
+        margin-bottom: 32px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 2.2rem;
+      }
+
+      .lede {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      section {
+        background: var(--card);
+        border: 1px solid var(--accent-soft);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 20px;
+        box-shadow: 0 10px 30px rgba(31, 41, 51, 0.06);
+      }
+
+      h2 {
+        margin-top: 0;
+        font-size: 1.25rem;
+      }
+
+      code {
+        font-family: Consolas, "Courier New", monospace;
+        background: var(--accent-soft);
+        padding: 0.1em 0.4em;
+        border-radius: 6px;
+      }
+
+      a {
+        color: var(--accent);
+      }
+
+      .button {
+        display: inline-block;
+        margin-top: 8px;
+        padding: 10px 16px;
+        background: var(--accent);
+        color: white;
+        text-decoration: none;
+        border-radius: 999px;
+        font-weight: 700;
+      }
+
+      .button:hover {
+        filter: brightness(1.05);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>はじめての HTML</h1>
+        <p class="lede">このファイルをブラウザで開くと、ウェブページとして表示されます。</p>
+      </header>
+
+      <section>
+        <h2>HTML とは？</h2>
+        <p>
+          HTML は、ページの<strong>骨格</strong>を作る言語です。見出し、段落、リンク、リストなどをタグで囲んで、ブラウザに「これは何の部品か」を伝えます。
+        </p>
+      </section>
+
+      <section>
+        <h2>よく使うタグ</h2>
+        <ul>
+          <li><code>&lt;h1&gt;</code> … いちばん大きな見出し</li>
+          <li><code>&lt;p&gt;</code> … 段落（文章のかたまり）</li>
+          <li><code>&lt;a&gt;</code> … リンク</li>
+          <li><code>&lt;ul&gt;</code> / <code>&lt;li&gt;</code> … 箇条書き</li>
+          <li><code>&lt;strong&gt;</code> … 強調</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>次にやってみよう</h2>
+        <p>このファイルを編集して、自分の名前や好きなことを書いてみてください。</p>
+        <p>保存したら、ブラウザを再読み込みすると変化が見えます。</p>
+        <a class="button" href="https://developer.mozilla.org/ja/docs/Learn_web_development/Core/Structuring_content">MDN の HTML 入門を見る</a>
+      </section>
+    </main>
+  </body>
+</html>

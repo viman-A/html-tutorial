@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <style>
+      #stage {
+        width: 360px;
+        max-width: 100%;
+        height: 550px;
+        margin-left: auto;
+        margin-right: auto;
+        box-sizing: border-box;
+        border: 8px solid #5c3b2e;
+        background: #f7f0e4;
+        position: relative;
+        touch-action: none;
+      }
+      .block {
+        position: absolute;
+        width: 48px;
+        height: 48px;
+        background: #c45c26;
+        left: 0;
+        bottom: 0;
+      }
+    </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>どうぶつタワー</title>
+  </head>
+  <body>
+    <!-- ゲームの説明 
+    <h1>どうぶつタワー</h1>
+    <p>ブラウザで開いたページです。ここからゲームを作っていきます。</p>
+    -->
+    <button type="button" id="start">はじめる</button>
+    <div id="stage"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.20.0/matter.min.js"></script>
+    <script>
+      const stage = document.querySelector("#stage");
+      const blocks = [];
+      const blockSize = 48;
+      const fallStep = 8;
+      const fallInterval = 20;
+
+      let current = null;
+      let dragging = false;
+
+      function addBlock(x, y) {
+        const block = document.createElement("div");
+        block.className = "block";
+        block.style.left = x + "px";
+        block.style.bottom = y + "px";
+        stage.appendChild(block);
+        return block;
+      }
+
+      function resetBlocks() {
+        blocks.length = 0;
+
+        const placed = stage.querySelectorAll(".block");
+        for (const block of placed) {
+          block.remove();
+        }
+        current = null;
+        prepareNext();
+      }
+
+      function prepareNext() {
+        const y = stage.clientHeight - blockSize;
+        current = addBlock(0, y);
+      }
+
+      function moveCurrent(event) {
+        const rect = stage.getBoundingClientRect();
+        let x = event.clientX - rect.left - blockSize / 2;
+        const maxX = stage.clientWidth - blockSize;
+
+        if (x < 0) {
+          x = 0;
+        }
+        if (x > maxX) {
+          x = maxX;
+        }
+        current.style.left = x + "px";
+      }
+
+      function landY(x){
+        let y = 0;
+
+        for (const block of blocks) {
+          const overlaps = x < block.x + blockSize && x + blockSize > block.x;
+          if (overlaps && block.y +blockSize > y) {
+            y = block.y + blockSize;
+          }
+        }
+        return y;
+      }
+
+      function fall(block, x){
+        const goal = landY(x);
+        const timer = setInterval(function () {
+          let y = parseInt(block.style.bottom, 10);
+          y = y - fallStep;
+
+          if(y <= goal){
+            y = goal;
+            block.style.bottom = y + "px";
+            clearInterval(timer);
+            blocks.push({ x: x, y: y });
+            const nextY = stage.clientHeight - blockSize;
+            if (y + blockSize > nextY) {
+              alert("枠がいっぱいになりました")
+              resetBlocks();
+            } else {
+              prepareNext();
+            }
+          } else {
+            block.style.bottom = y + "px";
+          }
+        }, fallInterval);
+      }
+
+      let dropped = false;
+      let box = null;
+      let block = null;
+      let releaseBody = null;
+      const pieces = [];
+
+      function moveBox(event) {
+        const rect = stage.getBoundingClientRect();
+        let x = event.clientX - rect.left;
+        const minX = blockSize / 2;
+        const maxX = width - blockSize / 2;
+
+        if (x < minX) {
+          x = minX;
+        }
+        if (x > maxX) {
+          x = maxX;
+        }
+        Matter.Body.setPosition(box, { x: x, y: blockSize });
+      }
+
+      function spawnPiece() {
+        box = Matter.Bodies.rectangle(width / 2, blockSize, blockSize, blockSize);
+        Matter.Body.setStatic(box, true);
+        Matter.Composite.add(engine.world, box);
+        block = addBlock(0, 0);
+        pieces.push({ body: box, element: block});
+        dropped = false;
+      }
+
+      stage.addEventListener("pointerdown", function (event) {
+        if(dropped) {
+          return;
+        }
+        dragging = true;
+        moveBox(event);
+      });
+
+      window.addEventListener("pointermove", function (event) {
+        if (!dragging || dropped) {
+          return;
+        }
+        moveBox(event);
+      });
+
+      window.addEventListener("pointerup", function () {
+        if (!dragging || dropped) {
+          return;
+        }
+        dragging = false;
+        dropped = true;
+        releaseBody = box;
+        Matter.Body.setStatic(box, false);
+        box = null;
+        });
+
+      const width = stage.clientWidth;
+      const height = stage.clientHeight;
+      const engine = Matter.Engine.create();
+      const ground = Matter.Bodies.rectangle(width / 2, height + 10, width, 20, {
+        isStatic: true
+      });
+      Matter.Composite.add(engine.world, ground);
+
+      Matter.Events.on(engine, "afterUpdate", function () {
+        for (const piece of pieces) {
+          piece.element.style.left = (piece.body.position.x - blockSize / 2) + "px";
+          piece.element.style.bottom = (height - (piece.body.position.y + blockSize / 2)) + "px";
+        }
+        if (releaseBody && releaseBody.position.y > blockSize * 2) {
+          releaseBody = null;
+          spawnPiece();
+        }
+      });
+      Matter.Runner.run(Matter.Runner.create(), engine);
+      spawnPiece();
+
+    </script>
+  </body>
+</html>
