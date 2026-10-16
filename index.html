@@ -5,7 +5,7 @@
       #stage {
         width: 360px;
         max-width: 100%;
-        height: 550px;
+        height: 250px;
         margin-left: auto;
         margin-right: auto;
         box-sizing: border-box;
@@ -32,7 +32,8 @@
     <h1>どうぶつタワー</h1>
     <p>ブラウザで開いたページです。ここからゲームを作っていきます。</p>
     -->
-    <button type="button" id="start">はじめる</button>
+    <button type="button" id="rotate">回す</button>
+    <p id="message"></p>
     <div id="stage"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.20.0/matter.min.js"></script>
     <script>
@@ -124,13 +125,29 @@
       let box = null;
       let block = null;
       let releaseBody = null;
+      let fallingStarted = false;
+      let lost = false;
       const pieces = [];
+      const shapes = [
+        { width: 48, height: 48 },
+        { width: 84, height: 36 },
+        { width: 36, height: 72 }
+      ];
+      let shapeIndex = 0;
+
+      function bodySize(){
+        return {
+          width: box.bounds.max.x - box.bounds.min.x,
+          height: box.bounds.max.y - box.bounds.min.y
+        };
+      }
 
       function moveBox(event) {
         const rect = stage.getBoundingClientRect();
+        const size = bodySize();
         let x = event.clientX - rect.left;
-        const minX = blockSize / 2;
-        const maxX = width - blockSize / 2;
+        const minX = size.width / 2;
+        const maxX = width - size.width / 2;
 
         if (x < minX) {
           x = minX;
@@ -138,19 +155,72 @@
         if (x > maxX) {
           x = maxX;
         }
-        Matter.Body.setPosition(box, { x: x, y: blockSize });
+        Matter.Body.setPosition(box, { x: x, y: size.height / 2 });
       }
 
       function spawnPiece() {
-        box = Matter.Bodies.rectangle(width / 2, blockSize, blockSize, blockSize);
+        const shape = shapes[shapeIndex % shapes.length];
+        shapeIndex++;
+
+        box = Matter.Bodies.rectangle(width / 2, shape.height / 2, shape.width, shape.height);
         Matter.Body.setStatic(box, true);
         Matter.Composite.add(engine.world, box);
         block = addBlock(0, 0);
-        pieces.push({ body: box, element: block});
+        block.style.width = shape.width + "px";
+        block.style.height = shape.height + "px";
+        pieces.push({ body: box, element: block, width: shape.width, height: shape.height });
         dropped = false;
       }
 
+      function resetPieces() {
+        for (const piece of pieces){
+          Matter.Composite.remove(engine.world, piece.body);
+          piece.element.remove();
+        }
+        pieces.length = 0;
+        box = null;
+        block = null;
+        releaseBody = null;
+        fallingStarted = false;
+        dropped = false;
+        dragging = false;
+        spawnPiece();
+      }
+
+      function pieceIsOut(body){
+        return body.position.x < 0 || body.position.x > width || body.position.y > height;
+      }
+
+      function lose() {
+        if (lost){
+          return;
+        }
+        lost = true;
+        releaseBody = null;
+        dropped = true;
+        box = null;
+        document.querySelector("#message").textContent = "あなたの負けです";
+        Matter.Runner.stop(runner);
+      }
+
+      document.querySelector("#rotate").addEventListener("click", function () {
+        if (lost) {
+          return;
+        }
+        if(!box || dropped) {
+          return;
+        }
+
+        Matter.Body.setAngle(box, box.angle + Math.PI / 2);
+        const size = bodySize();
+        Matter.Body.setPosition(box, { x: box.position.x, y: size.height / 2 });
+      });
+      
+
       stage.addEventListener("pointerdown", function (event) {
+        if (lost) {
+          return;
+        }
         if(dropped) {
           return;
         }
@@ -159,6 +229,9 @@
       });
 
       window.addEventListener("pointermove", function (event) {
+        if (lost) {
+           return;
+        }
         if (!dragging || dropped) {
           return;
         }
@@ -166,11 +239,15 @@
       });
 
       window.addEventListener("pointerup", function () {
+        if (lost) {
+          return;
+        }
         if (!dragging || dropped) {
           return;
         }
         dragging = false;
         dropped = true;
+        fallingStarted = false;
         releaseBody = box;
         Matter.Body.setStatic(box, false);
         box = null;
@@ -186,15 +263,39 @@
 
       Matter.Events.on(engine, "afterUpdate", function () {
         for (const piece of pieces) {
-          piece.element.style.left = (piece.body.position.x - blockSize / 2) + "px";
-          piece.element.style.bottom = (height - (piece.body.position.y + blockSize / 2)) + "px";
+          piece.element.style.left = (piece.body.position.x - piece.width / 2) + "px";
+          piece.element.style.bottom = (height - (piece.body.position.y + piece.height / 2)) + "px";
+          piece.element.style.transform = "rotate(" + piece.body.angle + "rad)";
         }
-        if (releaseBody && releaseBody.position.y > blockSize * 2) {
-          releaseBody = null;
-          spawnPiece();
+        if (!lost) {
+          for (const piece of pieces){
+            if (pieceIsOut(piece.body)) {
+              lose();
+              break;
+            }
+          }
+        }
+        if (!lost && releaseBody) {
+          if (releaseBody.speed > 0.4) {
+            fallingStarted = true;
+          }
+          const stopped = fallingStarted && releaseBody.speed < 0.15;
+          const clearedTop = releaseBody.bounds.min.y > 72;
+
+          if (clearedTop) {
+            releaseBody = null;
+            fallingStarted = false;
+            spawnPiece();
+          } else if (stopped) {
+            releaseBody = null;
+            fallingStarted = false;
+            alert("枠がいっぱいになりました");
+            resetPieces();
+          }
         }
       });
-      Matter.Runner.run(Matter.Runner.create(), engine);
+      const runner = Matter.Runner.create();
+      Matter.Runner.run(runner, engine);
       spawnPiece();
 
     </script>
