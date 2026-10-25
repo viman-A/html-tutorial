@@ -4,6 +4,7 @@ const animals = [
       image: "images/neko.png",
       width: 80,
       height: 64,
+      points: 30,
       parts: [
         [
           { x: -36, y: -22 },
@@ -30,6 +31,7 @@ const animals = [
       image: "images/inu.png",
       width: 35,
       height: 52,
+      points: 10,
       parts: [
         [
           { x: -14, y: 20 },
@@ -45,6 +47,7 @@ const animals = [
       image: "images/tanuki.png",
       width: 48,
       height: 72,
+      points: 20,
       parts: [
         [
           { x: -12, y: -22 },
@@ -79,6 +82,7 @@ const animals = [
       image: "images/usagi.png",
       width: 48,
       height: 72,
+      points: 20,
       parts: [
         [
           { x: -11, y: -32 },

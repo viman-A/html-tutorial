@@ -82,37 +82,41 @@ function spawnPiece() {
   element.style.backgroundSize = "100% 100%";
   element.style.backgroundRepeat = "no-repeat";
   element.style.backgroundColor = "transparent";
-  pieces.push({ body: box, element: element, width: shape.width, height: shape.height });
+  pieces.push({
+    body: box,
+    element: element,
+    width: shape.width,
+    height: shape.height,
+    points: shape.points
+  });
   dropped = false;
-}
-
-function resetPieces() {
-  for (const piece of pieces) {
-    Matter.Composite.remove(engine.world, piece.body);
-    piece.element.remove();
-  }
-  pieces.length = 0;
-  box = null;
-  releaseBody = null;
-  fallingStarted = false;
-  dropped = false;
-  dragging = false;
-  spawnPiece();
 }
 
 function pieceIsOut(body) {
   return body.position.x < 0 || body.position.x > width || body.position.y > height;
 }
 
-function lose() {
+function placedScore() {
+  let score = 0;
+  for (const piece of pieces) {
+    if (piece.body === box || pieceIsOut(piece.body)) {
+      continue;
+    }
+    score += piece.points;
+  }
+  return score;
+}
+
+function endGame(text) {
   if (lost) {
     return;
   }
+  const score = placedScore();
   lost = true;
   releaseBody = null;
   dropped = true;
   box = null;
-  message.textContent = loseMessage;
+  message.textContent = text + "　スコア: " + score;
   Matter.Runner.stop(runner);
 }
 
@@ -182,7 +186,7 @@ Matter.Events.on(engine, "afterUpdate", function () {
   if (!lost) {
     for (const piece of pieces) {
       if (pieceIsOut(piece.body)) {
-        lose();
+        endGame(loseMessage);
         break;
       }
     }
@@ -199,10 +203,7 @@ Matter.Events.on(engine, "afterUpdate", function () {
       fallingStarted = false;
       spawnPiece();
     } else if (stopped) {
-      releaseBody = null;
-      fallingStarted = false;
-      alert(fullMessage);
-      resetPieces();
+      endGame(fullMessage);
     }
   }
 });
