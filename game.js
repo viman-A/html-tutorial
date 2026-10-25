@@ -1,5 +1,8 @@
 const stage = document.querySelector("#stage");
 const message = document.querySelector("#message");
+const nextName = document.querySelector("#next-name");
+const nextImage = document.querySelector("#next-image");
+const nextDescription = document.querySelector("#next-description");
 
 const fallStartSpeed = 0.4;
 const stopSpeed = 0.15;
@@ -16,6 +19,18 @@ let releaseBody = null;
 let fallingStarted = false;
 let lost = false;
 const pieces = [];
+let nextAnimal = null;
+
+function pickAnimal() {
+  return animals[Math.floor(Math.random() * animals.length)];
+}
+
+function showNextAnimal() {
+  nextName.textContent = nextAnimal.name;
+  nextImage.src = nextAnimal.image;
+  nextImage.alt = nextAnimal.name;
+  nextDescription.textContent = nextAnimal.description;
+}
 
 function addBlock(x, y) {
   const block = document.createElement("div");
@@ -50,7 +65,9 @@ function moveBox(event) {
 }
 
 function spawnPiece() {
-  const shape = animals[Math.floor(Math.random() * animals.length)];
+  const shape = nextAnimal || pickAnimal();
+  nextAnimal = pickAnimal();
+  showNextAnimal();
 
   const partBodies = [];
   for (const part of shape.parts) {

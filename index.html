@@ -13,7 +13,15 @@
     -->
     <button type="button" id="rotate">回す</button>
     <p id="message"></p>
-    <div id="stage"></div>
+    <div id="board">
+      <div id="stage"></div>
+      <aside id="next">
+        <p id="next-label">次の動物：</p>
+        <p id="next-name"></p>
+        <img id="next-image" alt="">
+        <p id="next-description"></p>
+      </aside>
+    </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.20.0/matter.min.js"></script>
     <script src="animals.js"></script>
     <script src="game.js"></script>

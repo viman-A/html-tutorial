@@ -1,6 +1,7 @@
 const animals = [
     {
       name: "ねこ",
+      description: "横長で、足のあいだにすきまがある。",
       image: "images/neko.png",
       width: 80,
       height: 64,
@@ -28,6 +29,7 @@ const animals = [
     },
     {
       name: "いぬ",
+      description: "小さくて、すわっている。",
       image: "images/inu.png",
       width: 35,
       height: 52,
@@ -44,6 +46,7 @@ const animals = [
     },
     {
       name: "たぬき",
+      description: "丸い体で、足が短い。",
       image: "images/tanuki.png",
       width: 48,
       height: 72,
@@ -79,6 +82,7 @@ const animals = [
     },
     {
       name: "うさぎ",
+      description: "耳が長く、たてに高い。",
       image: "images/usagi.png",
       width: 48,
       height: 72,
