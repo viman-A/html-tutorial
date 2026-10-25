@@ -21,6 +21,16 @@
   background: #f7f0e4;
   padding: 8px;
   text-align: center;
+  position: relative;
+}
+#next #high-score {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  margin: 0;
+  color: #5c3b2e;
+  font-size: 14px;
+  text-align: right;
 }
 #next p {
   margin: 4px 0;

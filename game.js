@@ -3,6 +3,8 @@ const message = document.querySelector("#message");
 const nextName = document.querySelector("#next-name");
 const nextImage = document.querySelector("#next-image");
 const nextDescription = document.querySelector("#next-description");
+const highScoreLabel = document.querySelector("#high-score");
+const highScoreKey = "doubutsu-tower-high-score";
 
 const fallStartSpeed = 0.4;
 const stopSpeed = 0.15;
@@ -20,6 +22,28 @@ let fallingStarted = false;
 let lost = false;
 const pieces = [];
 let nextAnimal = null;
+let highScore = savedHighScore();
+
+function savedHighScore() {
+  const saved = Number(localStorage.getItem(highScoreKey));
+  if (Number.isNaN(saved)) {
+    return 0;
+  }
+  return saved;
+}
+
+function showHighScore() {
+  highScoreLabel.textContent = "最高スコア: " + highScore;
+}
+
+function keepHighScore(score) {
+  if (score <= highScore) {
+    return;
+  }
+  highScore = score;
+  localStorage.setItem(highScoreKey, String(highScore));
+  showHighScore();
+}
 
 function pickAnimal() {
   return animals[Math.floor(Math.random() * animals.length)];
@@ -129,6 +153,7 @@ function endGame(text) {
     return;
   }
   const score = placedScore();
+  keepHighScore(score);
   lost = true;
   releaseBody = null;
   dropped = true;
@@ -136,6 +161,31 @@ function endGame(text) {
   message.textContent = text + "　スコア: " + score;
   Matter.Runner.stop(runner);
 }
+
+function resetGame() {
+  const runnerStopped = lost;
+  for (const piece of pieces) {
+    Matter.Composite.remove(engine.world, piece.body);
+    piece.element.remove();
+  }
+  pieces.length = 0;
+  dragging = false;
+  dropped = false;
+  box = null;
+  releaseBody = null;
+  fallingStarted = false;
+  lost = false;
+  nextAnimal = null;
+  message.textContent = "";
+  if (runnerStopped) {
+    Matter.Runner.run(runner, engine);
+  }
+  spawnPiece();
+}
+
+document.querySelector("#reset").addEventListener("click", function () {
+  resetGame();
+});
 
 document.querySelector("#rotate").addEventListener("click", function () {
   if (lost) {
@@ -227,4 +277,5 @@ Matter.Events.on(engine, "afterUpdate", function () {
 
 const runner = Matter.Runner.create();
 Matter.Runner.run(runner, engine);
+showHighScore();
 spawnPiece();
