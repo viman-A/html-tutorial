@@ -13,6 +13,7 @@ const quarterTurn = Math.PI / 2;
 const groundThickness = 20;
 const loseMessage = "あなたの負けです";
 const fullMessage = "枠がいっぱいになりました";
+const fullBonus = 50;
 
 let dragging = false;
 let dropped = false;
@@ -148,17 +149,23 @@ function placedScore() {
   return score;
 }
 
-function endGame(text) {
+function endGame(text, bonus) {
   if (lost) {
     return;
   }
-  const score = placedScore();
+  let score = placedScore();
+  if (bonus) {
+    score += bonus;
+  }
   keepHighScore(score);
   lost = true;
   releaseBody = null;
   dropped = true;
   box = null;
   message.textContent = text + "　スコア: " + score;
+  if (bonus) {
+    message.textContent += "　ボーナス: " + bonus;
+  }
   Matter.Runner.stop(runner);
 }
 
@@ -270,7 +277,7 @@ Matter.Events.on(engine, "afterUpdate", function () {
       fallingStarted = false;
       spawnPiece();
     } else if (stopped) {
-      endGame(fullMessage);
+      endGame(fullMessage, fullBonus);
     }
   }
 });
