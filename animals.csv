@@ -1,0 +1,5 @@
+﻿name,description,image,width,height,points
+ねこ,横長で、足のあいだにすきまがある。,images/neko.png,80,64,30
+いぬ,小さくて、すわっている。,images/inu.png,35,52,10
+たぬき,丸い体で、足が短い。,images/tanuki.png,48,72,20
+うさぎ,耳が長く、たてに高い。,images/usagi.png,48,72,20
