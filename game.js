@@ -9,7 +9,6 @@ const highScoreKey = "doubutsu-tower-high-score";
 
 const fallStartSpeed = 0.4;
 const stopSpeed = 0.15;
-const spawnClearY = 72;
 const quarterTurn = Math.PI / 2;
 const groundThickness = 20;
 const loseMessage = "あなたの負けです";
@@ -372,7 +371,7 @@ Matter.Events.on(engine, "afterUpdate", function () {
       fallingStarted = true;
     }
     const stopped = fallingStarted && releaseBody.speed < stopSpeed;
-    const clearedTop = releaseBody.bounds.min.y > spawnClearY;
+    const clearedTop = releaseBody.bounds.min.y > nextAnimal.height;
 
     if (clearedTop) {
       releaseBody = null;
