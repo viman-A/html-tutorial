@@ -15,14 +15,30 @@
     <button type="button" id="reset">リセット</button>
     <button type="button" id="share" hidden>Xに投稿</button>
     <p id="message"></p>
+    <div id="register" hidden>
+      <p id="register-ask">ランキングに登録しますか？</p>
+      <p id="register-note"></p>
+      <label for="player-name">名前</label>
+      <input id="player-name" maxlength="4" autocomplete="off">
+      <button type="button" id="register-yes">登録する</button>
+      <button type="button" id="register-no">登録しない</button>
+    </div>
     <div id="board">
       <div id="stage"></div>
       <aside id="next">
-        <p id="next-label">次の動物：</p>
-        <p id="next-name"></p>
-        <img id="next-image" alt="">
-        <p id="next-description"></p>
-        <p id="high-score">最高スコア: 0</p>
+        <div>
+          <p id="next-label">次の動物：</p>
+          <p id="next-name"></p>
+          <img id="next-image" alt="">
+          <p id="next-description"></p>
+        </div>
+        <div id="records">
+          <p id="high-score">最高スコア: 0</p>
+          <p id="ranking-label">ランキング</p>
+          <div id="ranking">
+            <div id="ranking-track"></div>
+          </div>
+        </div>
       </aside>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.20.0/matter.min.js"></script>

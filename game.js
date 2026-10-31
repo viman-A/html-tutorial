@@ -5,7 +5,12 @@ const nextImage = document.querySelector("#next-image");
 const nextDescription = document.querySelector("#next-description");
 const highScoreLabel = document.querySelector("#high-score");
 const shareButton = document.querySelector("#share");
+const registerPanel = document.querySelector("#register");
+const registerNote = document.querySelector("#register-note");
+const playerNameInput = document.querySelector("#player-name");
+const rankingTrack = document.querySelector("#ranking-track");
 const highScoreKey = "doubutsu-tower-high-score";
+const namePattern = /^[A-Za-z0-9]{1,4}$/;
 
 const fallStartSpeed = 0.4;
 const stopSpeed = 0.15;
@@ -25,6 +30,9 @@ const pieces = [];
 let nextAnimal = null;
 let highScore = savedHighScore();
 let lastScore = 0;
+let scoreBaseMessage = "";
+let round = 0;
+let registering = false;
 
 function savedHighScore() {
   const saved = Number(localStorage.getItem(highScoreKey));
@@ -45,6 +53,93 @@ function keepHighScore(score) {
   highScore = score;
   localStorage.setItem(highScoreKey, String(highScore));
   showHighScore();
+}
+
+function hideRegister() {
+  registerPanel.hidden = true;
+  registerNote.textContent = "";
+  playerNameInput.value = "";
+  registering = false;
+}
+
+function showRegister() {
+  registerNote.textContent = "";
+  playerNameInput.value = "";
+  registerPanel.hidden = false;
+  playerNameInput.focus();
+}
+
+function messageWithRank(rank) {
+  if (rank) {
+    return scoreBaseMessage + "　" + rank + "位";
+  }
+  return scoreBaseMessage + "　圏外";
+}
+
+function loadRanking(score) {
+  let url = "/api/ranking";
+  if (score !== undefined) {
+    url += "?score=" + encodeURIComponent(score);
+  }
+  return fetch(url).then(function (response) {
+    if (!response.ok) {
+      throw new Error("ranking");
+    }
+    return response.json();
+  });
+}
+
+function rankingRows(entries) {
+  const rows = document.createElement("div");
+  for (const entry of entries) {
+    const row = document.createElement("p");
+    row.className = "ranking-row";
+    row.textContent = entry.rank + "位 " + entry.name + " " + entry.score;
+    rows.appendChild(row);
+  }
+  return rows;
+}
+
+function showRanking(entries) {
+  rankingTrack.classList.remove("is-scrolling");
+  rankingTrack.textContent = "";
+  rankingTrack.style.animationDuration = "";
+  if (!entries || entries.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "ranking-row";
+    empty.textContent = "まだありません";
+    rankingTrack.appendChild(empty);
+    return;
+  }
+  const rows = rankingRows(entries);
+  rankingTrack.appendChild(rows);
+  if (rows.offsetHeight <= rankingTrack.parentElement.clientHeight) {
+    return;
+  }
+  const copy = rankingRows(entries);
+  copy.setAttribute("aria-hidden", "true");
+  rankingTrack.appendChild(copy);
+  rankingTrack.style.animationDuration = (entries.length * 0.8) + "s";
+  void rankingTrack.offsetWidth;
+  rankingTrack.classList.add("is-scrolling");
+}
+
+function showRankingError() {
+  rankingTrack.classList.remove("is-scrolling");
+  rankingTrack.textContent = "";
+  rankingTrack.style.animationDuration = "";
+  const failed = document.createElement("p");
+  failed.className = "ranking-row";
+  failed.textContent = "読み込めませんでした";
+  rankingTrack.appendChild(failed);
+}
+
+function refreshRanking() {
+  return loadRanking().then(function (data) {
+    showRanking(data.entries);
+  }).catch(function () {
+    showRankingError();
+  });
 }
 
 function pickAnimal() {
@@ -170,10 +265,24 @@ function endGame(text, bonus) {
   if (bonus) {
     message.textContent += "　ボーナス: " + bonus;
   }
+  scoreBaseMessage = message.textContent;
+  hideRegister();
+  const thisRound = round;
+  loadRanking(score).then(function (data) {
+    if (thisRound !== round) {
+      return;
+    }
+    message.textContent = messageWithRank(data.rank);
+    if (data.eligible) {
+      showRegister();
+    }
+  }).catch(function () {});
   Matter.Runner.stop(runner);
 }
 
 function resetGame() {
+  round += 1;
+  hideRegister();
   const runnerStopped = lost;
   for (const piece of pieces) {
     Matter.Composite.remove(engine.world, piece.body);
@@ -197,6 +306,68 @@ function resetGame() {
 
 document.querySelector("#reset").addEventListener("click", function () {
   resetGame();
+});
+
+function submitScore() {
+  if (registering || registerPanel.hidden) {
+    return;
+  }
+  const thisRound = round;
+  const name = playerNameInput.value.trim();
+  if (!namePattern.test(name)) {
+    registerNote.textContent = "名前は英数字4文字以内です";
+    return;
+  }
+  registering = true;
+  registerNote.textContent = "";
+  fetch("/api/ranking", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: name, score: lastScore })
+  }).then(function (response) {
+    return response.json().then(function (data) {
+      return { ok: response.ok, data: data };
+    });
+  }).then(function (result) {
+    if (thisRound !== round) {
+      return;
+    }
+    if (!result.ok) {
+      registerNote.textContent = "登録できませんでした";
+      return;
+    }
+    if (!result.data.accepted) {
+      message.textContent = messageWithRank(null);
+      hideRegister();
+      return;
+    }
+    message.textContent = messageWithRank(result.data.rank);
+    hideRegister();
+    showRanking(result.data.entries);
+  }).catch(function () {
+    if (thisRound !== round) {
+      return;
+    }
+    registerNote.textContent = "登録できませんでした";
+  }).then(function () {
+    if (thisRound === round) {
+      registering = false;
+    }
+  });
+}
+
+document.querySelector("#register-no").addEventListener("click", function () {
+  hideRegister();
+});
+
+document.querySelector("#register-yes").addEventListener("click", function () {
+  submitScore();
+});
+
+playerNameInput.addEventListener("keydown", function (event) {
+  if (event.key === "Enter") {
+    submitScore();
+  }
 });
 
 function loadImage(src) {
@@ -386,4 +557,5 @@ Matter.Events.on(engine, "afterUpdate", function () {
 const runner = Matter.Runner.create();
 Matter.Runner.run(runner, engine);
 showHighScore();
+refreshRanking();
 spawnPiece();

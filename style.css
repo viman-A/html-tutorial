@@ -21,16 +21,51 @@
   background: #f7f0e4;
   padding: 8px;
   text-align: center;
-  position: relative;
+  display: flex;
+  flex-direction: column;
 }
-#next #high-score {
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
-  margin: 0;
+#records {
+  margin-top: auto;
+}
+#next #high-score,
+#next #ranking-label {
+  margin: 0 0 4px;
   color: #5c3b2e;
   font-size: 14px;
   text-align: right;
+}
+#ranking {
+  height: 160px;
+  overflow: hidden;
+}
+#ranking-track.is-scrolling {
+  animation-name: ranking-scroll;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+@keyframes ranking-scroll {
+  from { transform: translateY(0); }
+  to { transform: translateY(-50%); }
+}
+#ranking .ranking-row {
+  margin: 0;
+  font-size: 12px;
+  line-height: 16px;
+  color: #5c3b2e;
+  text-align: right;
+  white-space: nowrap;
+}
+#register {
+  margin: 8px 0;
+}
+#register-note {
+  margin: 4px 0;
+  min-height: 1em;
+  color: #8c2f2f;
+}
+#player-name {
+  width: 5em;
+  margin-right: 8px;
 }
 #next p {
   margin: 4px 0;
