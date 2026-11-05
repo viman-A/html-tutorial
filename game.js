@@ -393,7 +393,21 @@ function prepareShareLink() {
   shareButton.target = isPhone() ? "_self" : "_blank";
 }
 
-shareButton.addEventListener("click", prepareShareLink);
+function openShare(event) {
+  prepareShareLink();
+  if (!isPhone() || !navigator.share) {
+    return;
+  }
+  event.preventDefault();
+  navigator.share({ text: postMessage() }).catch(function (error) {
+    if (error && error.name === "AbortError") {
+      return;
+    }
+    window.location.assign(webIntentUrl());
+  });
+}
+
+shareButton.addEventListener("click", openShare);
 
 document.querySelector("#rotate").addEventListener("click", function () {
   if (lost) {
