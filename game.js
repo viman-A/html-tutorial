@@ -10,6 +10,8 @@ const registerNote = document.querySelector("#register-note");
 const playerNameInput = document.querySelector("#player-name");
 const rankingTrack = document.querySelector("#ranking-track");
 const highScoreKey = "doubutsu-tower-high-score";
+const rankingStorageKey = "doubutsu-tower-ranking";
+const maxRankingEntries = 100;
 const namePattern = /^[A-Za-z0-9]{1,4}$/;
 
 const fallStartSpeed = 0.4;
@@ -76,8 +78,108 @@ function messageWithRank(rank) {
   return scoreBaseMessage + "　圏外";
 }
 
+function byRank(a, b) {
+  if (b.score !== a.score) {
+    return b.score - a.score;
+  }
+  return a.at - b.at;
+}
+
+function validRankingEntries(data) {
+  if (!Array.isArray(data)) {
+    return [];
+  }
+  return data.filter(function (entry) {
+    return entry
+      && namePattern.test(entry.name)
+      && Number.isSafeInteger(entry.score)
+      && entry.score >= 0
+      && Number.isSafeInteger(entry.at);
+  });
+}
+
+function readLocalRanking() {
+  try {
+    return validRankingEntries(JSON.parse(localStorage.getItem(rankingStorageKey) || "[]"));
+  } catch (error) {
+    return [];
+  }
+}
+
+function writeLocalRanking(entries) {
+  localStorage.setItem(rankingStorageKey, JSON.stringify(entries));
+}
+
+function publicRanking(entries) {
+  return entries.slice().sort(byRank).map(function (entry, index) {
+    return {
+      rank: index + 1,
+      name: entry.name,
+      score: entry.score
+    };
+  });
+}
+
+function rankOf(entries, score, at) {
+  let above = 0;
+  for (const entry of entries) {
+    if (entry.score > score || (entry.score === score && entry.at <= at)) {
+      above += 1;
+    }
+  }
+  return above + 1;
+}
+
+function rankingSnapshot(entries, score) {
+  const kept = entries.slice().sort(byRank).slice(0, maxRankingEntries);
+  const body = { entries: publicRanking(kept) };
+  if (score === undefined) {
+    return body;
+  }
+  const rank = rankOf(entries, score, Date.now());
+  if (rank <= maxRankingEntries) {
+    body.rank = rank;
+    body.eligible = true;
+  } else {
+    body.rank = null;
+    body.eligible = false;
+  }
+  return body;
+}
+
+let publishedRankingPromise = null;
+
+function loadPublishedRanking() {
+  if (!publishedRankingPromise) {
+    publishedRankingPromise = fetch("ranking.json", { cache: "no-cache" }).then(function (response) {
+      if (!response.ok) {
+        throw new Error("ranking");
+      }
+      return response.json();
+    }).then(function (data) {
+      return validRankingEntries(data);
+    }).catch(function (error) {
+      publishedRankingPromise = null;
+      throw error;
+    });
+  }
+  return publishedRankingPromise;
+}
+
+function staticRankingEntries() {
+  return loadPublishedRanking().then(function (published) {
+    return published.concat(readLocalRanking());
+  }).catch(function () {
+    const local = readLocalRanking();
+    if (local.length === 0) {
+      throw new Error("ranking");
+    }
+    return local;
+  });
+}
+
 function loadRanking(score) {
-  let url = "/api/ranking";
+  let url = "api/ranking";
   if (score !== undefined) {
     url += "?score=" + encodeURIComponent(score);
   }
@@ -86,6 +188,59 @@ function loadRanking(score) {
       throw new Error("ranking");
     }
     return response.json();
+  }).catch(function () {
+    return staticRankingEntries().then(function (entries) {
+      return rankingSnapshot(entries, score);
+    });
+  });
+}
+
+function saveLocalRanking(name, score) {
+  return loadPublishedRanking().catch(function () {
+    return [];
+  }).then(function (published) {
+    const local = readLocalRanking();
+    const entries = published.concat(local);
+    const at = Date.now();
+    const rank = rankOf(entries, score, at);
+    if (rank > maxRankingEntries) {
+      return { ok: true, data: { accepted: false, rank: null, eligible: false } };
+    }
+    const added = { name: name, score: score, at: at };
+    const merged = published.concat(local, [added]).sort(byRank).slice(0, maxRankingEntries);
+    const keptLocal = [];
+    for (const entry of merged) {
+      if (published.indexOf(entry) === -1) {
+        keptLocal.push(entry);
+      }
+    }
+    writeLocalRanking(keptLocal);
+    return {
+      ok: true,
+      data: {
+        accepted: true,
+        rank: rank,
+        entries: publicRanking(merged)
+      }
+    };
+  });
+}
+
+function postRanking(name, score) {
+  return fetch("api/ranking", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: name, score: score })
+  }).then(function (response) {
+    const type = response.headers.get("content-type") || "";
+    if (type.indexOf("application/json") === -1) {
+      throw new Error("ranking");
+    }
+    return response.json().then(function (data) {
+      return { ok: response.ok, data: data };
+    });
+  }).catch(function () {
+    return saveLocalRanking(name, score);
   });
 }
 
@@ -321,15 +476,7 @@ function submitScore() {
   }
   registering = true;
   registerNote.textContent = "";
-  fetch("/api/ranking", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name: name, score: lastScore })
-  }).then(function (response) {
-    return response.json().then(function (data) {
-      return { ok: response.ok, data: data };
-    });
-  }).then(function (result) {
+  postRanking(name, lastScore).then(function (result) {
     if (thisRound !== round) {
       return;
     }
