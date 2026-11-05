@@ -374,9 +374,66 @@ function shareText() {
   return "スコア: " + lastScore;
 }
 
+function postMessage() {
+  return shareText() + "\n" + location.href;
+}
+
+function webIntentUrl() {
+  return "https://x.com/intent/post?text=" + encodeURIComponent(postMessage());
+}
+
+function isPhone() {
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+    || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+function openInNewTab(url) {
+  const opened = window.open(url, "_blank");
+  if (!opened) {
+    window.location.assign(url);
+  }
+}
+
+let phoneShareTimer = 0;
+let cancelPhoneShare = null;
+
+function openOnPhone() {
+  if (cancelPhoneShare) {
+    cancelPhoneShare();
+  }
+  const webUrl = webIntentUrl();
+  const appUrl = "twitter://post?message=" + encodeURIComponent(postMessage());
+  function cancelFallback() {
+    window.clearTimeout(phoneShareTimer);
+    document.removeEventListener("visibilitychange", onHide);
+    window.removeEventListener("pagehide", cancelFallback);
+    if (cancelPhoneShare === cancelFallback) {
+      cancelPhoneShare = null;
+    }
+  }
+  function onHide() {
+    if (document.hidden) {
+      cancelFallback();
+    }
+  }
+  cancelPhoneShare = cancelFallback;
+  document.addEventListener("visibilitychange", onHide);
+  window.addEventListener("pagehide", cancelFallback);
+  phoneShareTimer = window.setTimeout(function () {
+    cancelFallback();
+    if (!document.hidden) {
+      window.location.assign(webUrl);
+    }
+  }, 1200);
+  window.location.assign(appUrl);
+}
+
 function openIntent() {
-  const intent = "https://x.com/intent/tweet?text=" + encodeURIComponent(shareText()) + "&url=" + encodeURIComponent(location.href);
-  window.open(intent, "_blank");
+  if (isPhone()) {
+    openOnPhone();
+    return;
+  }
+  openInNewTab(webIntentUrl());
 }
 
 shareButton.addEventListener("click", openIntent);
