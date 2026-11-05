@@ -260,6 +260,7 @@ function endGame(text, bonus) {
   releaseBody = null;
   dropped = true;
   box = null;
+  prepareShareLink();
   shareButton.hidden = false;
   message.textContent = text + "　スコア: " + score;
   if (bonus) {
@@ -379,7 +380,7 @@ function postMessage() {
 }
 
 function webIntentUrl() {
-  return "https://x.com/intent/post?text=" + encodeURIComponent(postMessage());
+  return "https://twitter.com/intent/tweet?text=" + encodeURIComponent(postMessage());
 }
 
 function isPhone() {
@@ -387,56 +388,12 @@ function isPhone() {
     || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 }
 
-function openInNewTab(url) {
-  const opened = window.open(url, "_blank");
-  if (!opened) {
-    window.location.assign(url);
-  }
+function prepareShareLink() {
+  shareButton.href = webIntentUrl();
+  shareButton.target = isPhone() ? "_self" : "_blank";
 }
 
-let phoneShareTimer = 0;
-let cancelPhoneShare = null;
-
-function openOnPhone() {
-  if (cancelPhoneShare) {
-    cancelPhoneShare();
-  }
-  const webUrl = webIntentUrl();
-  const appUrl = "twitter://post?message=" + encodeURIComponent(postMessage());
-  function cancelFallback() {
-    window.clearTimeout(phoneShareTimer);
-    document.removeEventListener("visibilitychange", onHide);
-    window.removeEventListener("pagehide", cancelFallback);
-    if (cancelPhoneShare === cancelFallback) {
-      cancelPhoneShare = null;
-    }
-  }
-  function onHide() {
-    if (document.hidden) {
-      cancelFallback();
-    }
-  }
-  cancelPhoneShare = cancelFallback;
-  document.addEventListener("visibilitychange", onHide);
-  window.addEventListener("pagehide", cancelFallback);
-  phoneShareTimer = window.setTimeout(function () {
-    cancelFallback();
-    if (!document.hidden) {
-      window.location.assign(webUrl);
-    }
-  }, 1200);
-  window.location.assign(appUrl);
-}
-
-function openIntent() {
-  if (isPhone()) {
-    openOnPhone();
-    return;
-  }
-  openInNewTab(webIntentUrl());
-}
-
-shareButton.addEventListener("click", openIntent);
+shareButton.addEventListener("click", prepareShareLink);
 
 document.querySelector("#rotate").addEventListener("click", function () {
   if (lost) {

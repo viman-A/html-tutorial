@@ -1,3 +1,13 @@
+#share {
+  padding: 1px 6px;
+  border: 1px solid #767676;
+  border-radius: 2px;
+  background: #efefef;
+  color: CanvasText;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
 #board {
   display: flex;
   justify-content: center;
