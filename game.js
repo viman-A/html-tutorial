@@ -370,101 +370,16 @@ playerNameInput.addEventListener("keydown", function (event) {
   }
 });
 
-function loadImage(src) {
-  return new Promise(function (resolve, reject) {
-    const image = new Image();
-    image.onload = function () {
-      resolve(image);
-    };
-    image.onerror = function () {
-      reject(new Error(src));
-    };
-    image.src = src;
-  });
-}
-
-function frameImageFile() {
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const context = canvas.getContext("2d");
-  context.fillStyle = "#f7f0e4";
-  context.fillRect(0, 0, width, height);
-  const loads = [];
-  for (const piece of pieces) {
-    loads.push(loadImage(piece.image));
-  }
-  return Promise.all(loads).then(function (images) {
-    for (let i = 0; i < pieces.length; i++) {
-      const piece = pieces[i];
-      context.save();
-      context.translate(piece.body.position.x, piece.body.position.y);
-      context.rotate(piece.body.angle);
-      context.drawImage(
-        images[i],
-        -piece.width / 2,
-        -piece.height / 2,
-        piece.width,
-        piece.height
-      );
-      context.restore();
-    }
-    return new Promise(function (resolve) {
-      canvas.toBlob(function (blob) {
-        resolve(new File([blob], "doubutsu-tower.png", { type: "image/png" }));
-      }, "image/png");
-    });
-  });
-}
-
 function shareText() {
   return "スコア: " + lastScore;
 }
 
-function downloadFrame(file) {
-  const link = document.createElement("a");
-  const objectUrl = URL.createObjectURL(file);
-  link.href = objectUrl;
-  link.download = file.name;
-  link.click();
-  URL.revokeObjectURL(objectUrl);
-}
-
-function openIntent(popup, file) {
+function openIntent() {
   const intent = "https://x.com/intent/tweet?text=" + encodeURIComponent(shareText()) + "&url=" + encodeURIComponent(location.href);
-  if (popup) {
-    popup.location = intent;
-  } else {
-    window.open(intent, "_blank");
-  }
-  downloadFrame(file);
+  window.open(intent, "_blank");
 }
 
-shareButton.addEventListener("click", function () {
-  const popup = window.open("", "_blank");
-  frameImageFile().then(function (file) {
-    const shareData = {
-      text: shareText() + "\n" + location.href,
-      files: [file]
-    };
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      if (popup) {
-        popup.close();
-      }
-      navigator.share(shareData).catch(function (error) {
-        if (error.name === "AbortError") {
-          return;
-        }
-      });
-      return;
-    }
-    openIntent(popup, file);
-  }).catch(function () {
-    if (popup) {
-      popup.close();
-    }
-  });
-});
+shareButton.addEventListener("click", openIntent);
 
 document.querySelector("#rotate").addEventListener("click", function () {
   if (lost) {
