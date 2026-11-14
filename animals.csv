@@ -1,6 +1,6 @@
-﻿name,description,image,width,height,points
-ねこ,横長で、足のあいだにすきまがある。,images/neko.png,80,64,30
-いぬ,小さくて、すわっている。,images/inu.png,35,52,10
-たぬき,丸い体で、足が短い。,images/tanuki.png,48,72,20
-うさぎ,耳が長く、たてに高い。,images/usagi.png,48,72,20
-キリン,首が長く、たてに特大。,images/kirin.png,140,210,50
+﻿name,description,image,width,height,points,density,restitution,friction,frictionAir
+ねこ,横長で、足のあいだにすきまがある。,images/neko.png,80,64,30,0.0015,0.05,0.4,0.01
+いぬ,小さくて、すわっている。,images/inu.png,35,52,10,0.0005,0.3,0.05,0.01
+たぬき,丸い体で、足が短い。,images/tanuki.png,48,72,20,0.0025,0.1,0.5,0.01
+うさぎ,耳が長く、たてに高い。,images/usagi.png,48,72,20,0.0004,0.45,0.2,0.01
+キリン,首が長く、たてに特大。,images/kirin.png,140,210,50,0.004,0,0.25,0.04

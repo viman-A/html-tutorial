@@ -7,6 +7,10 @@ const animals = [
     width: 80,
     height: 64,
     points: 30,
+    density: 0.0015,
+    restitution: 0.05,
+    friction: 0.4,
+    frictionAir: 0.01,
     parts: [
       [
         { x: -36, y: -22 },
@@ -35,6 +39,10 @@ const animals = [
     width: 35,
     height: 52,
     points: 10,
+    density: 0.0005,
+    restitution: 0.3,
+    friction: 0.05,
+    frictionAir: 0.01,
     parts: [
       [
         { x: -14, y: 20 },
@@ -52,6 +60,10 @@ const animals = [
     width: 48,
     height: 72,
     points: 20,
+    density: 0.0025,
+    restitution: 0.1,
+    friction: 0.5,
+    frictionAir: 0.01,
     parts: [
       [
         { x: -12, y: -22 },
@@ -88,6 +100,10 @@ const animals = [
     width: 48,
     height: 72,
     points: 20,
+    density: 0.0004,
+    restitution: 0.45,
+    friction: 0.2,
+    frictionAir: 0.01,
     parts: [
       [
         { x: -11, y: -32 },
@@ -130,6 +146,10 @@ const animals = [
     width: 140,
     height: 210,
     points: 50,
+    density: 0.004,
+    restitution: 0,
+    friction: 0.25,
+    frictionAir: 0.04,
     parts: [
       [
         { x: 18, y: -68 },

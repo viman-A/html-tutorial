@@ -5,7 +5,7 @@ const fs = require("fs");
 const path = require("path");
 
 const root = __dirname;
-const animalColumns = ["name", "description", "image", "width", "height", "points"];
+const animalColumns = ["name", "description", "image", "width", "height", "points", "density", "restitution", "friction", "frictionAir"];
 const partColumns = ["name", "part", "x", "y"];
 
 function parseCsv(text) {
@@ -230,6 +230,10 @@ function generate(animals) {
     lines.push(`    width: ${jsNumber(animal.width)},`);
     lines.push(`    height: ${jsNumber(animal.height)},`);
     lines.push(`    points: ${jsNumber(animal.points)},`);
+    lines.push(`    density: ${jsNumber(animal.density)},`);
+    lines.push(`    restitution: ${jsNumber(animal.restitution)},`);
+    lines.push(`    friction: ${jsNumber(animal.friction)},`);
+    lines.push(`    frictionAir: ${jsNumber(animal.frictionAir)},`);
     lines.push("    parts: [");
     animal.parts.forEach((part, partIndex) => {
       lines.push("      [");
@@ -309,6 +313,30 @@ function main() {
         valid = false;
       }
 
+      const density = parseNumber(row.density);
+      if (density === null || density <= 0) {
+        errors.push(`animals.csv:${row.line}: density は 0 より大きい数値である必要があります`);
+        valid = false;
+      }
+
+      const restitution = parseNumber(row.restitution);
+      if (restitution === null || restitution < 0) {
+        errors.push(`animals.csv:${row.line}: restitution は 0 以上の数値である必要があります`);
+        valid = false;
+      }
+
+      const friction = parseNumber(row.friction);
+      if (friction === null || friction < 0) {
+        errors.push(`animals.csv:${row.line}: friction は 0 以上の数値である必要があります`);
+        valid = false;
+      }
+
+      const frictionAir = parseNumber(row.frictionAir);
+      if (frictionAir === null || frictionAir < 0 || frictionAir >= 1) {
+        errors.push(`animals.csv:${row.line}: frictionAir は 0 以上 1 未満の数値である必要があります`);
+        valid = false;
+      }
+
       if (valid) {
         animals.push({
           name: row.name,
@@ -317,6 +345,10 @@ function main() {
           width,
           height,
           points,
+          density,
+          restitution,
+          friction,
+          frictionAir,
           parts: []
         });
       }

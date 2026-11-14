@@ -317,6 +317,97 @@ function addBlock(x, y) {
   return block;
 }
 
+const imageBounds = {};
+
+function measureImage(src) {
+  const image = new Image();
+  image.onload = function () {
+    const canvas = document.createElement("canvas");
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const context = canvas.getContext("2d");
+    context.drawImage(image, 0, 0);
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    let minX = canvas.width;
+    let maxX = 0;
+    let minY = canvas.height;
+    let maxY = 0;
+    for (let y = 0; y < canvas.height; y++) {
+      for (let x = 0; x < canvas.width; x++) {
+        if (pixels[(y * canvas.width + x) * 4 + 3] > 16) {
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+    imageBounds[src] = {
+      left: minX / canvas.width,
+      right: (maxX + 1) / canvas.width,
+      top: minY / canvas.height,
+      bottom: (maxY + 1) / canvas.height
+    };
+  };
+  image.src = src;
+}
+
+function heldPiece() {
+  for (const piece of pieces) {
+    if (piece.body === box) {
+      return piece;
+    }
+  }
+  return null;
+}
+
+function horizontalExtents(piece, angle) {
+  const bounds = imageBounds[piece.image];
+  if (!bounds) {
+    return {
+      left: box.position.x - box.bounds.min.x,
+      right: box.bounds.max.x - box.position.x
+    };
+  }
+
+  const local = [
+    { x: bounds.left * piece.width - piece.width / 2, y: bounds.top * piece.height - piece.height / 2 },
+    { x: bounds.right * piece.width - piece.width / 2, y: bounds.top * piece.height - piece.height / 2 },
+    { x: bounds.right * piece.width - piece.width / 2, y: bounds.bottom * piece.height - piece.height / 2 },
+    { x: bounds.left * piece.width - piece.width / 2, y: bounds.bottom * piece.height - piece.height / 2 }
+  ];
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  let minX = Infinity;
+  let maxX = -Infinity;
+  for (const point of local) {
+    const x = point.x * cos - point.y * sin;
+    if (x < minX) minX = x;
+    if (x > maxX) maxX = x;
+  }
+  return { left: -minX, right: maxX };
+}
+
+function clampX(x) {
+  const piece = heldPiece();
+  const extents = piece ? horizontalExtents(piece, box.angle) : {
+    left: box.position.x - box.bounds.min.x,
+    right: box.bounds.max.x - box.position.x
+  };
+  let minX = extents.left;
+  let maxX = width - extents.right;
+  if (minX > maxX) {
+    return width / 2;
+  }
+  if (x < minX) {
+    return minX;
+  }
+  if (x > maxX) {
+    return maxX;
+  }
+  return x;
+}
+
 function bodySize() {
   return {
     width: box.bounds.max.x - box.bounds.min.x,
@@ -327,16 +418,7 @@ function bodySize() {
 function moveBox(event) {
   const rect = stage.getBoundingClientRect();
   const size = bodySize();
-  let x = event.clientX - rect.left;
-  const minX = size.width / 2;
-  const maxX = width - size.width / 2;
-
-  if (x < minX) {
-    x = minX;
-  }
-  if (x > maxX) {
-    x = maxX;
-  }
+  const x = clampX(event.clientX - rect.left - stage.clientLeft);
   Matter.Body.setPosition(box, { x: x, y: size.height / 2 });
 }
 
@@ -364,6 +446,12 @@ function spawnPiece() {
       parts: partBodies
     });
   }
+  // setStatic が元の値を退避するので、静止にする前に決める。
+  // 衝突は親ボディの restitution / friction を使う。
+  Matter.Body.setDensity(box, shape.density);
+  box.restitution = shape.restitution;
+  box.friction = shape.friction;
+  box.frictionAir = shape.frictionAir;
   Matter.Body.setPosition(box, { x: width / 2, y: shape.height / 2 });
   Matter.Body.setStatic(box, true);
   Matter.Composite.add(engine.world, box);
@@ -566,7 +654,7 @@ document.querySelector("#rotate").addEventListener("click", function () {
 
   Matter.Body.setAngle(box, box.angle + quarterTurn);
   const size = bodySize();
-  Matter.Body.setPosition(box, { x: box.position.x, y: size.height / 2 });
+  Matter.Body.setPosition(box, { x: clampX(box.position.x), y: size.height / 2 });
 });
 
 stage.addEventListener("pointerdown", function (event) {
@@ -648,4 +736,7 @@ const runner = Matter.Runner.create();
 Matter.Runner.run(runner, engine);
 showHighScore();
 refreshRanking();
+for (const animal of animals) {
+  measureImage(animal.image);
+}
 spawnPiece();
